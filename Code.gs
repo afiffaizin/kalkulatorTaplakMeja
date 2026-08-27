@@ -7,17 +7,20 @@
  * berdasarkan input Panjang, Lebar, dan Tinggi.
  * 
  * Layout Spreadsheet (Sheet: "Kalkulator"):
- *   Baris 1 : Header
- *   Kolom A : Panjang (cm)
- *   Kolom B : Lebar (cm)
- *   Kolom C : Tinggi (cm)
- *   Kolom D : KKDA Ukuran (e.g., "350 × 200")
- *   Kolom E : KKDA (m²)
- *   Kolom F : DA Ukuran (e.g., "200 × 200")
- *   Kolom G : DA (m²)
+ *   A1:C2 : Judul "KALKULATOR TAPLAK MEJA" (merged)
+ *   F1    : Label "JENIS TAPLAK"
+ *   G1    : Label "BANYAK CHECKOUT"
+ *   F2    : Label "KKDA"        | G2 : Hasil KKDA (m²)
+ *   F3    : Label "DA"          | G3 : Hasil DA (m²)
+ *   A3    : Header "PANJANG"
+ *   B3    : Header "LEBAR"
+ *   C3    : Header "TINGGI"
+ *   A4    : Input Panjang
+ *   B4    : Input Lebar
+ *   C4    : Input Tinggi
  * 
- * Admin cukup mengisi kolom A, B, C.
- * Kolom D–G diisi otomatis oleh script.
+ * Admin cukup mengisi A4, B4, C4.
+ * G2 dan G3 diisi otomatis oleh script.
  * ============================================================
  */
 
@@ -27,14 +30,18 @@
 
 const CONFIG = {
   SHEET_NAME: "Kalkulator",
+  // Input: baris 4, kolom A/B/C
+  INPUT_ROW: 4,
   INPUT_COLS: { PANJANG: 1, LEBAR: 2, TINGGI: 3 },  // A, B, C
-  OUTPUT_COLS: {
-    KKDA_LUAS: 4,    // D
-    DA_LUAS: 5       // E
+  // Output: kolom G
+  OUTPUT_CELLS: {
+    KKDA_ROW: 2, KKDA_COL: 7,  // G2
+    DA_ROW: 3,   DA_COL: 7     // G3
   },
-  TITLE_ROW: 1,
-  HEADER_ROW: 2,
-  DATA_START_ROW: 3,
+  // Layout rows
+  TITLE_ROWS: [1, 2],    // A1:C2 merged
+  HEADER_ROW: 3,         // PANJANG, LEBAR, TINGGI di baris 3
+  DATA_START_ROW: 4,     // Input data di baris 4
   ROUNDING_MULTIPLE: 50,
   CM2_TO_M2_DIVISOR: 10000
 };
@@ -59,18 +66,15 @@ function onEdit(e) {
   // Hanya proses sheet "Kalkulator"
   if (sheet.getName() !== CONFIG.SHEET_NAME) return;
 
-  // Hanya proses baris data (bukan header)
-  if (row < CONFIG.DATA_START_ROW) return;
+  // Hanya proses jika baris input (baris 4)
+  if (row !== CONFIG.INPUT_ROW) return;
 
   // Hanya proses jika kolom yang diedit adalah Panjang, Lebar, atau Tinggi
   const inputCols = Object.values(CONFIG.INPUT_COLS);
   if (!inputCols.includes(col)) return;
 
-  // Proses semua baris yang diedit (mendukung paste multi-baris)
-  const numRows = range.getNumRows();
-  for (let i = 0; i < numRows; i++) {
-    processRow(sheet, row + i);
-  }
+  // Proses perhitungan
+  processRow(sheet);
 }
 
 // ============================================================
@@ -84,14 +88,15 @@ function onEdit(e) {
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - Sheet aktif
  * @param {number} row - Nomor baris yang diproses
  */
-function processRow(sheet, row) {
+function processRow(sheet) {
+  const row = CONFIG.INPUT_ROW;
   const panjang = sheet.getRange(row, CONFIG.INPUT_COLS.PANJANG).getValue();
   const lebar = sheet.getRange(row, CONFIG.INPUT_COLS.LEBAR).getValue();
   const tinggi = sheet.getRange(row, CONFIG.INPUT_COLS.TINGGI).getValue();
 
   // Validasi: semua input harus angka positif
   if (!isValidInput(panjang) || !isValidInput(lebar) || !isValidInput(tinggi)) {
-    clearOutputRow(sheet, row);
+    clearOutputCells(sheet);
     return;
   }
 
@@ -102,7 +107,7 @@ function processRow(sheet, row) {
   const da = calculateDA(panjang, lebar, tinggi);
 
   // Tulis hasil ke spreadsheet
-  writeResults(sheet, row, kkda, da);
+  writeResults(sheet, kkda, da);
 }
 
 // ============================================================
@@ -214,26 +219,29 @@ function calculateDA(panjang, lebar, tinggi) {
  * @param {Object} kkda - Hasil perhitungan KKDA
  * @param {Object} da - Hasil perhitungan DA
  */
-function writeResults(sheet, row, kkda, da) {
-  const outputValues = [
-    [kkda.luasM2, da.luasM2]
-  ];
+function writeResults(sheet, kkda, da) {
+  const oc = CONFIG.OUTPUT_CELLS;
 
-  sheet.getRange(row, CONFIG.OUTPUT_COLS.KKDA_LUAS, 1, 2).setValues(outputValues);
+  // Tulis hasil KKDA ke G2
+  const kkdaCell = sheet.getRange(oc.KKDA_ROW, oc.KKDA_COL);
+  kkdaCell.setValue(kkda.luasM2);
+  kkdaCell.setNumberFormat("0.00");
 
-  // Format angka: 2 desimal untuk kolom luas (m²)
-  sheet.getRange(row, CONFIG.OUTPUT_COLS.KKDA_LUAS).setNumberFormat("0.00");
-  sheet.getRange(row, CONFIG.OUTPUT_COLS.DA_LUAS).setNumberFormat("0.00");
+  // Tulis hasil DA ke G3
+  const daCell = sheet.getRange(oc.DA_ROW, oc.DA_COL);
+  daCell.setValue(da.luasM2);
+  daCell.setNumberFormat("0.00");
 }
 
 /**
- * Menghapus kolom output jika input tidak valid.
+ * Menghapus output jika input tidak valid.
  * 
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - Sheet aktif
- * @param {number} row - Nomor baris
  */
-function clearOutputRow(sheet, row) {
-  sheet.getRange(row, CONFIG.OUTPUT_COLS.KKDA_LUAS, 1, 2).clearContent();
+function clearOutputCells(sheet) {
+  const oc = CONFIG.OUTPUT_CELLS;
+  sheet.getRange(oc.KKDA_ROW, oc.KKDA_COL).clearContent();
+  sheet.getRange(oc.DA_ROW, oc.DA_COL).clearContent();
 }
 
 // ============================================================
@@ -272,56 +280,69 @@ function setupSheet() {
     sheet = ss.insertSheet(CONFIG.SHEET_NAME);
   }
 
-  // Set judul
-  sheet.getRange(CONFIG.TITLE_ROW, 1).setValue("KALKULATOR TAPLAK MEJA");
+  // ── JUDUL: A1:C2 (merged) ──
+  sheet.getRange("A1:C2").merge();
+  const titleCell = sheet.getRange("A1");
+  titleCell.setValue("KALKULATOR TAPLAK MEJA");
+  titleCell.setFontSize(17);
+  titleCell.setFontWeight("bold");
+  titleCell.setHorizontalAlignment("center");
+  titleCell.setVerticalAlignment("middle");
+  titleCell.setBackground("#FFFF00");
 
-  // Merge judul across all columns
-  sheet.getRange(CONFIG.TITLE_ROW, 1, 1, 5).merge();
+  // ── JENIS TAPLAK & BANYAK CHECKOUT: F1, G1 ──
+  const f1 = sheet.getRange("F1");
+  f1.setValue("JENIS TAPLAK");
+  f1.setHorizontalAlignment("center");
+  f1.setBackground("#FFD966");
 
-  // Format judul
-  const titleRange = sheet.getRange(CONFIG.TITLE_ROW, 1);
-  titleRange.setFontSize(18);
-  titleRange.setFontWeight("bold");
-  titleRange.setHorizontalAlignment("center");
-  titleRange.setVerticalAlignment("middle");
-  titleRange.setBackground("#1a3c6e");
-  titleRange.setFontColor("#ffffff");
-  sheet.setRowHeight(CONFIG.TITLE_ROW, 50);
+  const g1 = sheet.getRange("G1");
+  g1.setValue("BANYAK CHECKOUT");
+  g1.setHorizontalAlignment("center");
+  g1.setBackground("#FFD966");
 
-  // Set header
-  const headers = [
-    ["Panjang (cm)", "Lebar (cm)", "Tinggi (cm)", "KKDA (m²)", "DA (m²)"]
-  ];
-  sheet.getRange(CONFIG.HEADER_ROW, 1, 1, 5).setValues(headers);
+  // ── KKDA label & result: F2, G2 ──
+  const f2 = sheet.getRange("F2");
+  f2.setValue("KKDA");
+  f2.setHorizontalAlignment("center");
+  f2.setBackground("#F6B26B");
 
-  // Format header
-  const headerRange = sheet.getRange(CONFIG.HEADER_ROW, 1, 1, 5);
-  headerRange.setFontWeight("bold");
-  headerRange.setHorizontalAlignment("center");
-  headerRange.setBackground("#4a86c8");
-  headerRange.setFontColor("#ffffff");
+  const g2 = sheet.getRange("G2");
+  g2.setBackground("#FFFF00");
+  g2.setNumberFormat("0.00");
 
-  // Set lebar kolom
-  sheet.setColumnWidth(1, 120);  // Panjang
-  sheet.setColumnWidth(2, 100);  // Lebar
-  sheet.setColumnWidth(3, 100);  // Tinggi
-  sheet.setColumnWidth(4, 100);  // KKDA (m²)
-  sheet.setColumnWidth(5, 100);  // DA (m²)
+  // ── DA label & result: F3, G3 ──
+  const f3 = sheet.getRange("F3");
+  f3.setValue("DA");
+  f3.setHorizontalAlignment("center");
+  f3.setBackground("#F6B26B");
 
-  // Format kolom output agar tidak bisa diedit secara visual (warna background berbeda)
-  if (sheet.getLastRow() > CONFIG.HEADER_ROW) {
-    const dataRows = sheet.getLastRow() - CONFIG.HEADER_ROW;
-    sheet.getRange(CONFIG.DATA_START_ROW, CONFIG.OUTPUT_COLS.KKDA_LUAS, dataRows, 2).setBackground("#f0f4f8");
-  }
+  const g3 = sheet.getRange("G3");
+  g3.setBackground("#FFFF00");
+  g3.setNumberFormat("0.00");
 
-  // Freeze judul + header
+  // ── Input headers: A3, B3, C3 ──
+  sheet.getRange("A3").setValue("PANJANG").setHorizontalAlignment("center").setBackground("#FFD966");
+  sheet.getRange("B3").setValue("LEBAR").setHorizontalAlignment("center").setBackground("#FFD966");
+  sheet.getRange("C3").setValue("TINGGI").setHorizontalAlignment("center").setBackground("#FFD966");
+
+  // ── Set lebar kolom ──
+  sheet.setColumnWidth(1, 140);  // A - Panjang
+  sheet.setColumnWidth(2, 80);   // B - Lebar
+  sheet.setColumnWidth(3, 80);   // C - Tinggi
+  sheet.setColumnWidth(4, 80);   // D
+  sheet.setColumnWidth(5, 80);   // E
+  sheet.setColumnWidth(6, 120);  // F - Jenis Taplak / Label
+  sheet.setColumnWidth(7, 160);  // G - Banyak Checkout / Hasil
+
+  // ── Freeze baris 3 (judul + header tetap terlihat) ──
   sheet.setFrozenRows(CONFIG.HEADER_ROW);
 
   SpreadsheetApp.getUi().alert(
     "✅ Setup selesai!\n\n" +
     "Sheet '" + CONFIG.SHEET_NAME + "' sudah siap digunakan.\n\n" +
-    "Silakan isi kolom Panjang, Lebar, dan Tinggi.\n" +
-    "KKDA dan DA akan dihitung otomatis."
+    "Silakan isi Panjang (A4), Lebar (B4), dan Tinggi (C4).\n" +
+    "Hasil KKDA (G2) dan DA (G3) akan dihitung otomatis."
   );
 }
 
@@ -343,17 +364,7 @@ function recalculateAll() {
     return;
   }
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow < CONFIG.DATA_START_ROW) {
-    SpreadsheetApp.getUi().alert("ℹ️ Tidak ada data untuk dihitung.");
-    return;
-  }
+  processRow(sheet);
 
-  let count = 0;
-  for (let row = CONFIG.DATA_START_ROW; row <= lastRow; row++) {
-    processRow(sheet, row);
-    count++;
-  }
-
-  SpreadsheetApp.getUi().alert("✅ Selesai! " + count + " baris berhasil dihitung ulang.");
+  SpreadsheetApp.getUi().alert("✅ Selesai! Perhitungan KKDA dan DA berhasil diperbarui.");
 }
