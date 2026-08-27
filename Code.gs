@@ -280,6 +280,9 @@ function setupSheet() {
     sheet = ss.insertSheet(CONFIG.SHEET_NAME);
   }
 
+  // ── Reset: hapus merge yang sudah ada ──
+  sheet.getRange("A1:G4").breakApart();
+
   // ── JUDUL: A1:C2 (merged) ──
   sheet.getRange("A1:C2").merge();
   const titleCell = sheet.getRange("A1");
