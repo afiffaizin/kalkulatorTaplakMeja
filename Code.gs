@@ -8,19 +8,19 @@
  * 
  * Layout Spreadsheet (Sheet: "Kalkulator"):
  *   A1:C2 : Judul "KALKULATOR TAPLAK MEJA" (merged)
- *   F1    : Label "JENIS TAPLAK"
- *   G1    : Label "BANYAK CHECKOUT"
- *   F2    : Label "KKDA"        | G2 : Hasil KKDA (m²)
- *   F3    : Label "DA"          | G3 : Hasil DA (m²)
  *   A3    : Header "PANJANG"
  *   B3    : Header "LEBAR"
  *   C3    : Header "TINGGI"
+ *   F3    : Label "JENIS TAPLAK"
+ *   G3    : Label "BANYAK CHECKOUT"
  *   A4    : Input Panjang
  *   B4    : Input Lebar
  *   C4    : Input Tinggi
+ *   F4    : Label "KKDA"        | G4 : Hasil KKDA (m²)
+ *   F5    : Label "DA"          | G5 : Hasil DA (m²)
  * 
  * Admin cukup mengisi A4, B4, C4.
- * G2 dan G3 diisi otomatis oleh script.
+ * G4 dan G5 diisi otomatis oleh script.
  * ============================================================
  */
 
@@ -35,8 +35,8 @@ const CONFIG = {
   INPUT_COLS: { PANJANG: 1, LEBAR: 2, TINGGI: 3 },  // A, B, C
   // Output: kolom G
   OUTPUT_CELLS: {
-    KKDA_ROW: 2, KKDA_COL: 7,  // G2
-    DA_ROW: 3,   DA_COL: 7     // G3
+    KKDA_ROW: 4, KKDA_COL: 7,  // G4
+    DA_ROW: 5,   DA_COL: 7     // G5
   },
   // Layout rows
   TITLE_ROWS: [1, 2],    // A1:C2 merged
@@ -281,7 +281,7 @@ function setupSheet() {
   }
 
   // ── Reset: hapus merge yang sudah ada ──
-  sheet.getRange("A1:G4").breakApart();
+  sheet.getRange("A1:G5").breakApart();
 
   // ── JUDUL: A1:C2 (merged) ──
   sheet.getRange("A1:C2").merge();
@@ -293,41 +293,20 @@ function setupSheet() {
   titleCell.setVerticalAlignment("middle");
   titleCell.setBackground("#FFFF00");
 
-  // ── JENIS TAPLAK & BANYAK CHECKOUT: F1, G1 ──
-  const f1 = sheet.getRange("F1");
-  f1.setValue("JENIS TAPLAK");
-  f1.setHorizontalAlignment("center");
-  f1.setBackground("#FFD966");
-
-  const g1 = sheet.getRange("G1");
-  g1.setValue("BANYAK CHECKOUT");
-  g1.setHorizontalAlignment("center");
-  g1.setBackground("#FFD966");
-
-  // ── KKDA label & result: F2, G2 ──
-  const f2 = sheet.getRange("F2");
-  f2.setValue("KKDA");
-  f2.setHorizontalAlignment("center");
-  f2.setBackground("#F6B26B");
-
-  const g2 = sheet.getRange("G2");
-  g2.setBackground("#FFFF00");
-  g2.setNumberFormat("0.00");
-
-  // ── DA label & result: F3, G3 ──
-  const f3 = sheet.getRange("F3");
-  f3.setValue("DA");
-  f3.setHorizontalAlignment("center");
-  f3.setBackground("#F6B26B");
-
-  const g3 = sheet.getRange("G3");
-  g3.setBackground("#FFFF00");
-  g3.setNumberFormat("0.00");
-
-  // ── Input headers: A3, B3, C3 ──
+  // ── Baris 3: Input headers + Jenis Taplak header ──
   sheet.getRange("A3").setValue("PANJANG").setHorizontalAlignment("center").setBackground("#FFD966");
   sheet.getRange("B3").setValue("LEBAR").setHorizontalAlignment("center").setBackground("#FFD966");
   sheet.getRange("C3").setValue("TINGGI").setHorizontalAlignment("center").setBackground("#FFD966");
+  sheet.getRange("F3").setValue("JENIS TAPLAK").setHorizontalAlignment("center").setBackground("#FFD966");
+  sheet.getRange("G3").setValue("BANYAK CHECKOUT").setHorizontalAlignment("center").setBackground("#FFD966");
+
+  // ── Baris 4: KKDA label & result ──
+  sheet.getRange("F4").setValue("KKDA").setHorizontalAlignment("center").setBackground("#F6B26B");
+  sheet.getRange("G4").setBackground("#FFFF00").setNumberFormat("0.00");
+
+  // ── Baris 5: DA label & result ──
+  sheet.getRange("F5").setValue("DA").setHorizontalAlignment("center").setBackground("#F6B26B");
+  sheet.getRange("G5").setBackground("#FFFF00").setNumberFormat("0.00");
 
   // ── Set lebar kolom ──
   sheet.setColumnWidth(1, 140);  // A - Panjang
@@ -345,7 +324,7 @@ function setupSheet() {
     "✅ Setup selesai!\n\n" +
     "Sheet '" + CONFIG.SHEET_NAME + "' sudah siap digunakan.\n\n" +
     "Silakan isi Panjang (A4), Lebar (B4), dan Tinggi (C4).\n" +
-    "Hasil KKDA (G2) dan DA (G3) akan dihitung otomatis."
+    "Hasil KKDA (G4) dan DA (G5) akan dihitung otomatis."
   );
 }
 
