@@ -234,10 +234,8 @@ function writeResults(sheet, kkda, da) {
 
   // Tampilkan notifikasi hasil
   const msg = 
-    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-    "  KKDA  :  " + kkda.luasM2.toFixed(2) + " m²\n" +
-    "  DA      :  " + da.luasM2.toFixed(2) + " m²\n" +
-    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+    "KKDA  :  " + kkda.luasM2.toFixed(2) + " m²\n" +
+    "DA      :  " + da.luasM2.toFixed(2) + " m²";
   SpreadsheetApp.getActiveSpreadsheet().toast(msg, "Perhitungan berhasil! Hasil KKDA dan DA telah diperbarui.", 5);
 }
 
