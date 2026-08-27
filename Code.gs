@@ -227,10 +227,18 @@ function writeResults(sheet, kkda, da) {
   kkdaCell.setValue(kkda.luasM2);
   kkdaCell.setNumberFormat("0.00");
 
-  // Tulis hasil DA ke G3
+  // Tulis hasil DA ke G5
   const daCell = sheet.getRange(oc.DA_ROW, oc.DA_COL);
   daCell.setValue(da.luasM2);
   daCell.setNumberFormat("0.00");
+
+  // Tampilkan notifikasi hasil
+  const msg = 
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+    "  KKDA  :  " + kkda.luasM2.toFixed(2) + " m²\n" +
+    "  DA      :  " + da.luasM2.toFixed(2) + " m²\n" +
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+  SpreadsheetApp.getActiveSpreadsheet().toast(msg, "Perhitungan berhasil! Hasil KKDA dan DA telah diperbarui.", 5);
 }
 
 /**
