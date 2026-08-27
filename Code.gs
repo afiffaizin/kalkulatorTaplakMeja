@@ -317,9 +317,6 @@ function setupSheet() {
   sheet.setColumnWidth(6, 120);  // F - Jenis Taplak / Label
   sheet.setColumnWidth(7, 160);  // G - Banyak Checkout / Hasil
 
-  // ── Freeze baris 3 (judul + header tetap terlihat) ──
-  sheet.setFrozenRows(CONFIG.HEADER_ROW);
-
   SpreadsheetApp.getUi().alert(
     "✅ Setup selesai!\n\n" +
     "Sheet '" + CONFIG.SHEET_NAME + "' sudah siap digunakan.\n\n" +
